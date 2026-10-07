@@ -13,6 +13,11 @@ class GameEngine:
         self.feedback_msg = "Solve the card and press Enter!"
         self.feedback_color = (200, 205, 215)
 
+        # Timer settings
+        self.time_limit = 10
+        self.time_remaining = self.time_limit
+        self.timer_start = pygame.time.get_ticks()
+
         self.num_a = 0
         self.num_b = 0
         self.operator = "+"
@@ -37,6 +42,10 @@ class GameEngine:
             self.num_a, self.num_b = self.num_b, self.num_a
 
         self.input_box.clear()
+
+        # Reset timer for the new question
+        self.timer_start = pygame.time.get_ticks()
+        self.time_remaining = self.time_limit
 
     def compute_expected_answer(self):
         if self.operator == "+":
@@ -79,7 +88,17 @@ class GameEngine:
                 self.submit_answer()
 
     def update(self):
-        pass
+        # Calculate elapsed time
+        elapsed = (pygame.time.get_ticks() - self.timer_start) / 1000
+
+        self.time_remaining = max(0, self.time_limit - elapsed)
+
+        # If time runs out, register a missed attempt
+        if self.time_remaining <= 0:
+            self.total_attempts += 1
+            self.feedback_msg = "TIME OUT! Question missed."
+            self.feedback_color = (240, 75, 75)
+            self.generate_new_card()
 
     def render(self, screen):
         screen.fill((25, 29, 37))
@@ -146,6 +165,46 @@ class GameEngine:
             )
         )
 
+        # Timer bar
+        timer_x = self.width // 2 - 130
+        timer_y = 212
+        timer_width = 260
+        timer_height = 10
+
+        pygame.draw.rect(
+            screen,
+            (70, 75, 85),
+            (timer_x, timer_y, timer_width, timer_height),
+            border_radius=5
+        )
+
+        timer_width_remaining = int(
+            timer_width * (self.time_remaining / self.time_limit)
+        )
+
+        if timer_width_remaining > 0:
+            pygame.draw.rect(
+                screen,
+                (80, 200, 120),
+                (timer_x, timer_y, timer_width_remaining, timer_height),
+                border_radius=5
+            )
+
+        # Timer text
+        timer_text = self.font_hud.render(
+            f"Time: {self.time_remaining:.1f}s",
+            True,
+            (220, 225, 235)
+        )
+
+        screen.blit(
+            timer_text,
+            (
+                self.width // 2 - timer_text.get_width() // 2,
+                270
+            )
+        )
+
         self.input_box.render(screen)
 
         pygame.draw.rect(
@@ -187,6 +246,6 @@ class GameEngine:
             msg_surf,
             (
                 self.width // 2 - msg_surf.get_width() // 2,
-                295
+                320
             )
         )
