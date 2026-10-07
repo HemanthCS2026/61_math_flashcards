@@ -39,12 +39,20 @@ class GameEngine:
         self.generate_new_card()
 
     def generate_new_card(self):
-        self.num_a = random.randint(3, 15)
-        self.num_b = random.randint(2, 12)
-        self.operator = random.choice(["+", "-", "*"])
+        self.operator = random.choice(["+", "-", "*", "/"])
 
-        if self.operator == "-" and self.num_a < self.num_b:
-            self.num_a, self.num_b = self.num_b, self.num_a
+        if self.operator == "/":
+            # Generate a clean division problem
+            divisor = random.randint(2, 12)
+            quotient = random.randint(2, 12)
+            self.num_b = divisor
+            self.num_a = divisor * quotient
+        else:
+            self.num_a = random.randint(3, 15)
+            self.num_b = random.randint(2, 12)
+
+            if self.operator == "-" and self.num_a < self.num_b:
+                self.num_a, self.num_b = self.num_b, self.num_a
 
         self.input_box.clear()
 
@@ -59,6 +67,8 @@ class GameEngine:
             return self.num_a - self.num_b
         elif self.operator == "*":
             return self.num_a * self.num_b
+        elif self.operator == "/":
+            return self.num_a // self.num_b
 
     def reset_streak(self):
         self.streak = 0
@@ -237,7 +247,7 @@ class GameEngine:
             timer_text,
             (
                 self.width // 2 - timer_text.get_width() // 2,
-                270
+                278
             )
         )
 
