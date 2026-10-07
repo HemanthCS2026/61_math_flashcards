@@ -10,6 +10,11 @@ class GameEngine:
 
         self.score = 0
         self.total_attempts = 0
+
+        # Streak multiplier
+        self.streak = 0
+        self.multiplier = 1
+
         self.feedback_msg = "Solve the card and press Enter!"
         self.feedback_color = (200, 205, 215)
 
@@ -55,6 +60,10 @@ class GameEngine:
         elif self.operator == "*":
             return self.num_a * self.num_b
 
+    def reset_streak(self):
+        self.streak = 0
+        self.multiplier = 1
+
     def submit_answer(self):
         val_str = self.input_box.text.strip()
 
@@ -68,13 +77,24 @@ class GameEngine:
         self.total_attempts += 1
 
         if user_answer == expected:
-            self.score += 1
-            self.feedback_msg = f"CORRECT! {self.num_a} {self.operator} {self.num_b} = {expected}"
+            self.streak += 1
+            self.multiplier = self.streak
+
+            self.score += self.multiplier
+
+            self.feedback_msg = (
+                f"CORRECT! {self.num_a} {self.operator} {self.num_b} "
+                f"= {expected}  (+{self.multiplier})"
+            )
             self.feedback_color = (80, 230, 110)
+
             self.generate_new_card()
+
         else:
             self.feedback_msg = f"WRONG! Expected {expected}."
             self.feedback_color = (240, 75, 75)
+
+            self.reset_streak()
             self.input_box.clear()
 
     def handle_event(self, event):
@@ -96,8 +116,11 @@ class GameEngine:
         # If time runs out, register a missed attempt
         if self.time_remaining <= 0:
             self.total_attempts += 1
+
             self.feedback_msg = "TIME OUT! Question missed."
             self.feedback_color = (240, 75, 75)
+
+            self.reset_streak()
             self.generate_new_card()
 
     def render(self, screen):
@@ -127,11 +150,25 @@ class GameEngine:
             )
         )
 
+        # Streak and multiplier HUD
+        streak_surf = self.font_hud.render(
+            f"Streak: {self.streak}   Multiplier: x{self.multiplier}",
+            True,
+            (255, 180, 80)
+        )
+        screen.blit(
+            streak_surf,
+            (
+                self.width // 2 - streak_surf.get_width() // 2,
+                80
+            )
+        )
+
         card_rect = pygame.Rect(
             self.width // 2 - 130,
-            95,
+            105,
             260,
-            110
+            100
         )
 
         pygame.draw.rect(
@@ -190,7 +227,6 @@ class GameEngine:
                 border_radius=5
             )
 
-        # Timer text
         timer_text = self.font_hud.render(
             f"Time: {self.time_remaining:.1f}s",
             True,
